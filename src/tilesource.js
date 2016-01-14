@@ -458,6 +458,7 @@ $.TileSource.prototype = /** @lends OpenSeadragon.TileSource.prototype */{
             // request info via xhr asynchronously.
             $.makeAjaxRequest( {
                 url: url,
+                headers: this.requestHeaders,
                 withCredentials: this.ajaxWithCredentials,
                 success: function( xhr ) {
                     var data = processResponse( xhr );

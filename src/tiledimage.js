@@ -145,7 +145,8 @@ $.TiledImage = function( options ) {
         minPixelRatio:          $.DEFAULT_SETTINGS.minPixelRatio,
         smoothTileEdgesMinZoom: $.DEFAULT_SETTINGS.smoothTileEdgesMinZoom,
         debugMode:              $.DEFAULT_SETTINGS.debugMode,
-        crossOriginPolicy:      $.DEFAULT_SETTINGS.crossOriginPolicy,
+        requestHeaders:         $.DEFAULT_SETTINGS.headers,
+        ajaxWithCredentials:    $.DEFAULT_SETTINGS.ajaxWithCredentials,
         placeholderFillStyle:   $.DEFAULT_SETTINGS.placeholderFillStyle,
         opacity:                $.DEFAULT_SETTINGS.opacity
 
@@ -1025,7 +1026,8 @@ function loadTile( tiledImage, tile, time ) {
     tile.loading = true;
     tiledImage._imageLoader.addJob({
         src: tile.url,
-        crossOriginPolicy: tiledImage.crossOriginPolicy,
+        requestHeaders: tiledImage.requestHeaders,
+        ajaxWithCredentials: tiledImage.ajaxWithCredentials,
         callback: function( image, errorMsg ){
             onTileLoad( tiledImage, tile, time, image, errorMsg );
         },

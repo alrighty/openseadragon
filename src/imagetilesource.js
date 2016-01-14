@@ -106,13 +106,6 @@
             var image = this._image = new Image();
             var _this = this;
 
-            if (this.crossOriginPolicy) {
-                image.crossOrigin = this.crossOriginPolicy;
-            }
-            if (this.ajaxWithCredentials) {
-                image.useCredentials = this.ajaxWithCredentials;
-            }
-
             $.addEvent(image, 'load', function () {
                 _this.width = image.naturalWidth;
                 _this.height = image.naturalHeight;
@@ -139,7 +132,26 @@
                 });
             });
 
-            image.src = url;
+            $.makeAjaxRequest({
+                url: url,
+                headers: this.requestHeaders,
+                responseType: "arraybuffer",
+                withCredentials: this.ajaxWithCredentials,
+                success: function( xhr ) {
+                    // Obtain a blob: URL for the image data.
+                    var arrayBufferView = new Uint8Array(xhr.response);
+                    var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+                    var urlCreator = window.URL || window.webkitURL;
+                    var imageUrl = urlCreator.createObjectURL(blob);
+                    _this._image.src = imageUrl;
+                },
+                error: function ( xhr, exc ) {
+                    _this.raiseEvent('open-failed', {
+                        message: "Error loading image at " + url,
+                        source: url
+                    });
+                }
+            });
         },
         /**
          * @function
