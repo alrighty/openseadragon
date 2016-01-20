@@ -1,6 +1,6 @@
 //! openseadragon 2.1.0
-//! Built on 2016-01-15
-//! Git commit: v2.1.0-62-a0a44db-dirty
+//! Built on 2016-01-20
+//! Git commit: v2.1.0-71-7c0f6a1-dirty
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -10165,19 +10165,18 @@ $.Navigator = function( options ){
     this._resizeWithViewer = options.controlOptions.anchor != $.ControlAnchor.ABSOLUTE &&
         options.controlOptions.anchor != $.ControlAnchor.NONE;
 
-    if ( this._resizeWithViewer ) {
-        if ( options.width && options.height ) {
-            this.element.style.height = typeof ( options.height )  == "number" ? ( options.height + 'px' ) : options.height;
-            this.element.style.width  = typeof ( options.width )  == "number" ? ( options.width + 'px' ) : options.width;
-        } else {
-            viewerSize = $.getElementSize( viewer.element );
-            this.element.style.height = Math.round( viewerSize.y * options.sizeRatio ) + 'px';
-            this.element.style.width  = Math.round( viewerSize.x * options.sizeRatio ) + 'px';
-            this.oldViewerSize = viewerSize;
-        }
-        navigatorSize = $.getElementSize( this.element );
-        this.elementArea = navigatorSize.x * navigatorSize.y;
+    
+    if ( options.width && options.height ) {
+        this.element.style.height = typeof ( options.height )  == "number" ? ( options.height + 'px' ) : options.height;
+        this.element.style.width  = typeof ( options.width )  == "number" ? ( options.width + 'px' ) : options.width;
+    } else {
+        viewerSize = $.getElementSize( viewer.element );
+        this.element.style.height = Math.round( viewerSize.y * options.sizeRatio ) + 'px';
+        this.element.style.width  = Math.round( viewerSize.x * options.sizeRatio ) + 'px';
+        this.oldViewerSize = viewerSize;
     }
+    navigatorSize = $.getElementSize( this.element );
+    this.elementArea = navigatorSize.x * navigatorSize.y;
 
     this.oldContainerSize = new $.Point( 0, 0 );
 
@@ -12784,7 +12783,7 @@ function filterFiles( files ){
         if( file.height &&
             file.width &&
             file.url && (
-                file.url.toLowerCase().match(/^.*\.(png|jpg|jpeg|gif)$/) || (
+                file.url.toLowerCase().match(/^.*\.(png|jpg|jpeg|gif)(?:\?.*)?$/) || (
                     file.mimetype &&
                     file.mimetype.toLowerCase().match(/^.*\/(png|jpg|jpeg|gif)$/)
                 )
@@ -14917,7 +14916,7 @@ $.extend( $.DisplayRect.prototype, $.Rect.prototype );
  * @param {Number} options.springStiffness - Spring stiffness. Must be greater than zero.
  * The closer to zero, the closer to linear animation.
  * @param {Number} options.animationTime - Animation duration per spring, in seconds.
- * Must be greater than zero.
+ * Must be zero or greater.
  * @param {Number} [options.initial=0] - Initial value of spring.
  * @param {Boolean} [options.exponential=false] - Whether this spring represents
  * an exponential scale (such as zoom) and should be animated accordingly. Note that
@@ -14955,8 +14954,8 @@ $.Spring = function( options ) {
     $.console.assert(typeof options.springStiffness === "number" && options.springStiffness !== 0,
         "[OpenSeadragon.Spring] options.springStiffness must be a non-zero number");
 
-    $.console.assert(typeof options.animationTime === "number" && options.animationTime !== 0,
-        "[OpenSeadragon.Spring] options.animationTime must be a non-zero number");
+    $.console.assert(typeof options.animationTime === "number" && options.animationTime >= 0,
+        "[OpenSeadragon.Spring] options.animationTime must be a number greater than or equal to 0");
 
     if (options.exponential) {
         this._exponential = true;
@@ -18922,7 +18921,6 @@ function loadTile( tiledImage, tile, time ) {
     tile.loading = true;
     tiledImage._imageLoader.addJob({
         src: tile.url,
-        crossOriginPolicy: tiledImage.crossOriginPolicy,
         requestHeaders: tiledImage.requestHeaders,
         ajaxWithCredentials: tiledImage.ajaxWithCredentials,
         callback: function( image, errorMsg ){
