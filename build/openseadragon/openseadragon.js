@@ -1,6 +1,6 @@
 //! openseadragon 2.1.0
 //! Built on 2016-01-20
-//! Git commit: v2.1.0-71-7c0f6a1-dirty
+//! Git commit: v2.1.0-74-b721105-dirty
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -10319,6 +10319,8 @@ $.extend( $.Navigator.prototype, $.EventSource.prototype, $.Viewer.prototype, /*
                 var myItem = event.item;
                 myItem._originalForNavigator = original;
                 _this._matchBounds(myItem, original, true);
+
+                options.success(event);
 
                 original.addHandler('bounds-change', function() {
                     _this._matchBounds(myItem, original);
