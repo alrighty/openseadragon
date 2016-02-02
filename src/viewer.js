@@ -1207,6 +1207,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * (portions of the image outside of this area will not be visible). Only works on
      * browsers that support the HTML5 canvas.
      * @param {Number} [options.opacity] Opacity the tiled image should be drawn at by default.
+     * @param {String} [options.compositeOperation] How the image is composited onto other images.
      * @param {Function} [options.success] A function that gets called when the image is
      * successfully added. It's passed the event object which contains a single property:
      * "item", the resulting TiledImage.
@@ -1238,6 +1239,9 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         }
         if (options.opacity === undefined) {
             options.opacity = this.opacity;
+        }
+        if (options.compositeOperation === undefined) {
+            options.compositeOperation = this.compositeOperation;
         }
 
         var myQueueItem = {
@@ -1337,6 +1341,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     clip: queueItem.options.clip,
                     placeholderFillStyle: queueItem.options.placeholderFillStyle,
                     opacity: queueItem.options.opacity,
+                    compositeOperation: queueItem.options.compositeOperation,
                     springStiffness: _this.springStiffness,
                     animationTime: _this.animationTime,
                     minZoomImageRatio: _this.minZoomImageRatio,
@@ -1387,6 +1392,31 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
             event.options = options;
             raiseAddItemFailed(event);
         } );
+    },
+
+    /**
+     * Add a simple image to the viewer.
+     * The options are the same as the ones in {@link OpenSeadragon.Viewer#addTiledImage}
+     * except for options.tileSource which is replaced by options.url.
+     * @function
+     * @param {Object} options - See {@link OpenSeadragon.Viewer#addTiledImage}
+     * for all the options
+     * @param {String} options.url - The URL of the image to add.
+     * @fires OpenSeadragon.World.event:add-item
+     * @fires OpenSeadragon.Viewer.event:add-item-failed
+     */
+    addSimpleImage: function(options) {
+        $.console.assert(options, "[Viewer.addSimpleImage] options is required");
+        $.console.assert(options.url, "[Viewer.addSimpleImage] options.url is required");
+
+        var opts = $.extend({}, options, {
+            tileSource: {
+                type: 'image',
+                url:  options.url
+            }
+        });
+        delete opts.url;
+        this.addTiledImage(opts);
     },
 
     // deprecated

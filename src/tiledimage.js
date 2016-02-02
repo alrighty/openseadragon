@@ -66,6 +66,7 @@
  * @param {Number} [options.minPixelRatio] - See {@link OpenSeadragon.Options}.
  * @param {Number} [options.smoothTileEdgesMinZoom] - See {@link OpenSeadragon.Options}.
  * @param {Number} [options.opacity=1] - Opacity the tiled image should be drawn at.
+ * @param {String} [options.compositeOperation] - How the image is composited onto other images; see compositeOperation in {@link OpenSeadragon.Options} for possible values.
  * @param {Boolean} [options.debugMode] - See {@link OpenSeadragon.Options}.
  * @param {String|CanvasGradient|CanvasPattern|Function} [options.placeholderFillStyle] - See {@link OpenSeadragon.Options}.
  * @param {String|Boolean} [options.crossOriginPolicy] - See {@link OpenSeadragon.Options}.
@@ -132,7 +133,6 @@ $.TiledImage = function( options ) {
         _midDraw:       false, // Is the tiledImage currently updating the viewport?
         _needsDraw:     true,  // Does the tiledImage need to update the viewport again?
         _hasOpaqueTile: false,  // Do we have even one fully opaque tile?
-
         //configurable settings
         springStiffness:        $.DEFAULT_SETTINGS.springStiffness,
         animationTime:          $.DEFAULT_SETTINGS.animationTime,
@@ -148,7 +148,8 @@ $.TiledImage = function( options ) {
         requestHeaders:         $.DEFAULT_SETTINGS.headers,
         ajaxWithCredentials:    $.DEFAULT_SETTINGS.ajaxWithCredentials,
         placeholderFillStyle:   $.DEFAULT_SETTINGS.placeholderFillStyle,
-        opacity:                $.DEFAULT_SETTINGS.opacity
+        opacity:                $.DEFAULT_SETTINGS.opacity,
+        compositeOperation:     $.DEFAULT_SETTINGS.compositeOperation
 
     }, options );
 
@@ -177,7 +178,7 @@ $.TiledImage = function( options ) {
       /**
        * This event is fired just before the tile is drawn giving the application a chance to alter the image.
        *
-       * NOTE: This event is only fired when the drawer is using a <canvas>.
+       * NOTE: This event is only fired when the drawer is using a &lt;canvas&gt;.
        *
        * @event tile-drawing
        * @memberof OpenSeadragon.Viewer
@@ -583,6 +584,21 @@ $.extend($.TiledImage.prototype, $.EventSource.prototype, /** @lends OpenSeadrag
      */
     setOpacity: function(opacity) {
         this.opacity = opacity;
+        this._needsDraw = true;
+    },
+
+    /**
+     * @returns {String} The TiledImage's current compositeOperation.
+     */
+    getCompositeOperation: function() {
+        return this.compositeOperation;
+    },
+
+    /**
+     * @param {String} compositeOperation the tiled image should be drawn with this globalCompositeOperation.
+     */
+    setCompositeOperation: function(compositeOperation) {
+        this.compositeOperation = compositeOperation;
         this._needsDraw = true;
     },
 
@@ -1315,25 +1331,31 @@ function drawTiles( tiledImage, lastDrawn ) {
         drawDebugInfo( tiledImage, lastDrawn );
         return;
     }
-    var useSketch = tiledImage.opacity < 1;
+    var useSketch = tiledImage.opacity < 1 ||
+          (tiledImage.compositeOperation && tiledImage.compositeOperation !== 'source-over');
+
     var sketchScale;
     var sketchTranslate;
 
     var zoom = tiledImage.viewport.getZoom(true);
     var imageZoom = tiledImage.viewportToImageZoom(zoom);
-    if ( imageZoom > tiledImage.smoothTileEdgesMinZoom && tile) {
+    if (imageZoom > tiledImage.smoothTileEdgesMinZoom && tile) {
         // When zoomed in a lot (>100%) the tile edges are visible.
         // So we have to composite them at ~100% and scale them up together.
         useSketch = true;
         sketchScale = tile.getScaleForEdgeSmoothing();
-        sketchTranslate = tile.getTranslationForEdgeSmoothing(sketchScale);
+        sketchTranslate = tile.getTranslationForEdgeSmoothing(sketchScale,
+            tiledImage._drawer.getCanvasSize(false),
+            tiledImage._drawer.getCanvasSize(true));
     }
 
     if ( useSketch ) {
         tiledImage._drawer._clear( true );
     }
 
-    if (tiledImage.viewport.degrees !== 0) {
+    // When scaling, we must rotate only when blending the sketch canvas to avoid
+    // interpolation
+    if (tiledImage.viewport.degrees !== 0 && !sketchScale) {
         tiledImage._drawer._offsetForRotation(tiledImage.viewport.degrees, useSketch);
     }
 
@@ -1402,12 +1424,19 @@ function drawTiles( tiledImage, lastDrawn ) {
         tiledImage._drawer.restoreContext( useSketch );
     }
 
-    if (tiledImage.viewport.degrees !== 0) {
+    if (tiledImage.viewport.degrees !== 0 && !sketchScale) {
         tiledImage._drawer._restoreRotationChanges(useSketch);
     }
 
-    if ( useSketch ) {
-        tiledImage._drawer.blendSketch( tiledImage.opacity, sketchScale, sketchTranslate );
+    if (useSketch) {
+        var offsetForRotation = tiledImage.viewport.degrees !== 0 && sketchScale;
+        if (offsetForRotation) {
+            tiledImage._drawer._offsetForRotation(tiledImage.viewport.degrees, false);
+        }
+        tiledImage._drawer.blendSketch(tiledImage.opacity, sketchScale, sketchTranslate, tiledImage.compositeOperation);
+        if (offsetForRotation) {
+            tiledImage._drawer._restoreRotationChanges(false);
+        }
     }
     drawDebugInfo( tiledImage, lastDrawn );
 }
