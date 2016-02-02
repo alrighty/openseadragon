@@ -1,6 +1,6 @@
 //! openseadragon 2.1.0
-//! Built on 2016-01-20
-//! Git commit: v2.1.0-74-b721105-dirty
+//! Built on 2016-02-02
+//! Git commit: v2.1.0-116-8938f8d-dirty
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -211,6 +211,11 @@
   *
   * @property {Number} [opacity=1]
   *     Default opacity of the tiled images (1=opaque, 0=transparent)
+  *
+  * @property {String} [compositeOperation=null]
+  *     Valid values are 'source-over', 'source-atop', 'source-in', 'source-out',
+  *     'destination-over', 'destination-atop', 'destination-in',
+  *     'destination-out', 'lighter', 'copy' or 'xor'
   *
   * @property {String|CanvasGradient|CanvasPattern|Function} [placeholderFillStyle=null]
   *     Draws a colored rectangle behind the tile if it is not loaded yet.
@@ -1074,6 +1079,7 @@ if (typeof define === 'function' && define.amd) {
 
             // APPEARANCE
             opacity:                    1,
+            compositeOperation:         null,
             placeholderFillStyle:       null,
 
             //REFERENCE STRIP SETTINGS
@@ -2930,7 +2936,8 @@ $.EventSource = function() {
     this.events = {};
 };
 
-$.EventSource.prototype = /** @lends OpenSeadragon.EventSource.prototype */{
+/** @lends OpenSeadragon.EventSource.prototype */
+$.EventSource.prototype = {
 
     // TODO: Add a method 'one' which automatically unbinds a listener after the first triggered event that matches.
 
@@ -3307,7 +3314,8 @@ $.EventSource.prototype = /** @lends OpenSeadragon.EventSource.prototype */{
         }
     };
 
-    $.MouseTracker.prototype = /** @lends OpenSeadragon.MouseTracker.prototype */{
+    /** @lends OpenSeadragon.MouseTracker.prototype */
+    $.MouseTracker.prototype = {
 
         /**
          * Clean up any events or objects created by the tracker.
@@ -4159,7 +4167,9 @@ $.EventSource.prototype = /** @lends OpenSeadragon.EventSource.prototype */{
          */
         this.captureCount = 0;
     };
-    $.MouseTracker.GesturePointList.prototype = /** @lends OpenSeadragon.MouseTracker.GesturePointList.prototype */{
+
+    /** @lends OpenSeadragon.MouseTracker.GesturePointList.prototype */
+    $.MouseTracker.GesturePointList.prototype = {
         /**
          * @function
          * @returns {Number} Number of gesture points in the list.
@@ -6487,7 +6497,8 @@ $.Control = function ( element, options, container ) {
     }
 };
 
-$.Control.prototype = /** @lends OpenSeadragon.Control.prototype */{
+/** @lends OpenSeadragon.Control.prototype */
+$.Control.prototype = {
 
     /**
      * Removes the control from the container.
@@ -6624,7 +6635,8 @@ $.Control.prototype = /** @lends OpenSeadragon.Control.prototype */{
         this.container.appendChild( this.controls.bottomleft );
     };
 
-    $.ControlDock.prototype = /** @lends OpenSeadragon.ControlDock.prototype */{
+    /** @lends OpenSeadragon.ControlDock.prototype */
+    $.ControlDock.prototype = {
 
         /**
          * @function
@@ -7972,6 +7984,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * (portions of the image outside of this area will not be visible). Only works on
      * browsers that support the HTML5 canvas.
      * @param {Number} [options.opacity] Opacity the tiled image should be drawn at by default.
+     * @param {String} [options.compositeOperation] How the image is composited onto other images.
      * @param {Function} [options.success] A function that gets called when the image is
      * successfully added. It's passed the event object which contains a single property:
      * "item", the resulting TiledImage.
@@ -8003,6 +8016,9 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         }
         if (options.opacity === undefined) {
             options.opacity = this.opacity;
+        }
+        if (options.compositeOperation === undefined) {
+            options.compositeOperation = this.compositeOperation;
         }
 
         var myQueueItem = {
@@ -8102,6 +8118,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     clip: queueItem.options.clip,
                     placeholderFillStyle: queueItem.options.placeholderFillStyle,
                     opacity: queueItem.options.opacity,
+                    compositeOperation: queueItem.options.compositeOperation,
                     springStiffness: _this.springStiffness,
                     animationTime: _this.animationTime,
                     minZoomImageRatio: _this.minZoomImageRatio,
@@ -8152,6 +8169,31 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
             event.options = options;
             raiseAddItemFailed(event);
         } );
+    },
+
+    /**
+     * Add a simple image to the viewer.
+     * The options are the same as the ones in {@link OpenSeadragon.Viewer#addTiledImage}
+     * except for options.tileSource which is replaced by options.url.
+     * @function
+     * @param {Object} options - See {@link OpenSeadragon.Viewer#addTiledImage}
+     * for all the options
+     * @param {String} options.url - The URL of the image to add.
+     * @fires OpenSeadragon.World.event:add-item
+     * @fires OpenSeadragon.Viewer.event:add-item-failed
+     */
+    addSimpleImage: function(options) {
+        $.console.assert(options, "[Viewer.addSimpleImage] options is required");
+        $.console.assert(options.url, "[Viewer.addSimpleImage] options.url is required");
+
+        var opts = $.extend({}, options, {
+            tileSource: {
+                type: 'image',
+                url:  options.url
+            }
+        });
+        delete opts.url;
+        this.addTiledImage(opts);
     },
 
     // deprecated
@@ -10630,7 +10672,8 @@ $.Point = function( x, y ) {
     this.y = typeof ( y ) == "number" ? y : 0;
 };
 
-$.Point.prototype = /** @lends OpenSeadragon.Point.prototype */{
+/** @lends OpenSeadragon.Point.prototype */
+$.Point.prototype = {
     /**
      * @function
      * @returns {OpenSeadragon.Point} a duplicate of this Point
@@ -11037,8 +11080,8 @@ $.TileSource = function( width, height, tileSize, tileOverlap, minLevel, maxLeve
 
 };
 
-
-$.TileSource.prototype = /** @lends OpenSeadragon.TileSource.prototype */{
+/** @lends OpenSeadragon.TileSource.prototype */
+$.TileSource.prototype = {
 
     getTileSize: function( level ) {
         $.console.error(
@@ -13817,7 +13860,8 @@ $.ButtonGroup = function( options ) {
     });
 };
 
-$.ButtonGroup.prototype = /** @lends OpenSeadragon.ButtonGroup.prototype */{
+/** @lends OpenSeadragon.ButtonGroup.prototype */
+$.ButtonGroup.prototype = {
 
     /**
      * TODO: Figure out why this is used on the public API and if a more useful
@@ -13955,7 +13999,8 @@ $.Rect = function(x, y, width, height, degrees) {
     }
 };
 
-$.Rect.prototype = /** @lends OpenSeadragon.Rect.prototype */{
+/** @lends OpenSeadragon.Rect.prototype */
+$.Rect.prototype = {
     /**
      * @function
      * @returns {OpenSeadragon.Rect} a duplicate of this Rect
@@ -14163,7 +14208,7 @@ $.Rect.prototype = /** @lends OpenSeadragon.Rect.prototype */{
     /**
      * Retrieves the smallest horizontal (degrees=0) rectangle which contains
      * this rectangle.
-     * @returns {OpenSeadrayon.Rect}
+     * @returns {OpenSeadragon.Rect}
      */
     getBoundingBox: function() {
         if (this.degrees === 0) {
@@ -15011,7 +15056,8 @@ $.Spring = function( options ) {
     }
 };
 
-$.Spring.prototype = /** @lends OpenSeadragon.Spring.prototype */{
+/** @lends OpenSeadragon.Spring.prototype */
+$.Spring.prototype = {
 
     /**
      * @function
@@ -15248,7 +15294,8 @@ $.ImageLoader = function( options ) {
 
 };
 
-$.ImageLoader.prototype = /** @lends OpenSeadragon.ImageLoader.prototype */{
+/** @lends OpenSeadragon.ImageLoader.prototype */
+$.ImageLoader.prototype = {
 
     /**
      * Add an unloaded image to the loader queue.
@@ -15502,7 +15549,8 @@ $.Tile = function(level, x, y, bounds, exists, url, context2D) {
     this.lastTouchTime  = 0;
 };
 
-$.Tile.prototype = /** @lends OpenSeadragon.Tile.prototype */{
+/** @lends OpenSeadragon.Tile.prototype */
+$.Tile.prototype = {
 
     /**
      * Provides a string representation of this tiles level and (x,y)
@@ -15672,11 +15720,14 @@ $.Tile.prototype = /** @lends OpenSeadragon.Tile.prototype */{
      * @param {Number} [scale=1] - Scale to be applied to position.
      * @return {OpenSeadragon.Point}
      */
-    getTranslationForEdgeSmoothing: function(scale) {
+    getTranslationForEdgeSmoothing: function(scale, canvasSize, sketchCanvasSize) {
         // The translation vector must have positive values, otherwise the image goes a bit off
         // the sketch canvas to the top and left and we must use negative coordinates to repaint it
-        // to the main canvas. And FF does not like it. It crashes the viewer.
-        return new $.Point(1, 1).minus(
+        // to the main canvas. In that case, some browsers throw:
+        // INDEX_SIZE_ERR: DOM Exception 1: Index or size was negative, or greater than the allowed value.
+        var x = Math.max(1, Math.ceil((sketchCanvasSize.x - canvasSize.x) / 2));
+        var y = Math.max(1, Math.ceil((sketchCanvasSize.y - canvasSize.y) / 2));
+        return new $.Point(x, y).minus(
             this.position
                 .times($.pixelDensityRatio)
                 .times(scale || 1)
@@ -15842,7 +15893,8 @@ $.Tile.prototype = /** @lends OpenSeadragon.Tile.prototype */{
             true : options.checkResize;
     };
 
-    $.Overlay.prototype = /** @lends OpenSeadragon.Overlay.prototype */{
+    /** @lends OpenSeadragon.Overlay.prototype */
+    $.Overlay.prototype = {
 
         /**
          * @function
@@ -16160,7 +16212,8 @@ $.Drawer = function( options ) {
     this.container.appendChild( this.canvas );
 };
 
-$.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
+/** @lends OpenSeadragon.Drawer.prototype */
+$.Drawer.prototype = {
     // deprecated
     addOverlay: function( element, location, placement, onDraw ) {
         $.console.error("drawer.addOverlay is deprecated. Use viewer.addOverlay instead.");
@@ -16277,8 +16330,9 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
                 this.canvas.width = viewportSize.x;
                 this.canvas.height = viewportSize.y;
                 if ( this.sketchCanvas !== null ) {
-                    this.sketchCanvas.width = this.canvas.width;
-                    this.sketchCanvas.height = this.canvas.height;
+                    var sketchCanvasSize = this._calculateSketchCanvasSize();
+                    this.sketchCanvas.width = sketchCanvasSize.x;
+                    this.sketchCanvas.height = sketchCanvasSize.y;
                 }
             }
             this._clear();
@@ -16340,9 +16394,23 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
         if ( useSketch ) {
             if (this.sketchCanvas === null) {
                 this.sketchCanvas = document.createElement( "canvas" );
-                this.sketchCanvas.width = this.canvas.width;
-                this.sketchCanvas.height = this.canvas.height;
+                var sketchCanvasSize = this._calculateSketchCanvasSize();
+                this.sketchCanvas.width = sketchCanvasSize.x;
+                this.sketchCanvas.height = sketchCanvasSize.y;
                 this.sketchContext = this.sketchCanvas.getContext( "2d" );
+
+                // If the viewport is not currently rotated, the sketchCanvas
+                // will have the same size as the main canvas. However, if
+                // the viewport get rotated later on, we will need to resize it.
+                if (this.viewport.getRotation() === 0) {
+                    var self = this;
+                    this.viewer.addHandler('rotate', function resizeSketchCanvas() {
+                        self.viewer.removeHandler('rotate', resizeSketchCanvas);
+                        var sketchCanvasSize = self._calculateSketchCanvasSize();
+                        self.sketchCanvas.width = sketchCanvasSize.x;
+                        self.sketchCanvas.height = sketchCanvasSize.y;
+                    });
+                }
             }
             context = this.sketchContext;
         }
@@ -16397,10 +16465,11 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
      * @param {Float} opacity The opacity of the blending.
      * @param {Float} [scale=1] The scale at which tiles were drawn on the sketch. Default is 1.
      *   Use scale to draw at a lower scale and then enlarge onto the main canvas.
-     * @param OpenSeadragon.Point} [translate] A translation vector that was used to draw the tiles
+     * @param {OpenSeadragon.Point} [translate] A translation vector that was used to draw the tiles
+     * @param {String} [options.compositeOperation] - How the image is composited onto other images; see compositeOperation in {@link OpenSeadragon.Options} for possible values.
      * @returns {undefined}
      */
-    blendSketch: function(opacity, scale, translate) {
+    blendSketch: function(opacity, scale, translate, compositeOperation) {
         if (!this.useCanvas || !this.sketchCanvas) {
             return;
         }
@@ -16409,18 +16478,30 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
             translate :
             new $.Point(0, 0);
 
+        var widthExt = 0;
+        var heightExt = 0;
+        if (translate) {
+            var widthDiff = this.sketchCanvas.width - this.canvas.width;
+            var heightDiff = this.sketchCanvas.height - this.canvas.height;
+            widthExt = Math.round(widthDiff / 2);
+            heightExt = Math.round(heightDiff / 2);
+        }
+
         this.context.save();
         this.context.globalAlpha = opacity;
+        if (compositeOperation) {
+            this.context.globalCompositeOperation = compositeOperation;
+        }
         this.context.drawImage(
             this.sketchCanvas,
-            position.x,
-            position.y,
-            this.sketchCanvas.width * scale,
-            this.sketchCanvas.height * scale,
-            0,
-            0,
-            this.canvas.width,
-            this.canvas.height
+            position.x - widthExt * scale,
+            position.y - heightExt * scale,
+            (this.canvas.width + 2 * widthExt) * scale,
+            (this.canvas.height  + 2 * heightExt) * scale,
+            -widthExt,
+            -heightExt,
+            this.canvas.width + 2 * widthExt,
+            this.canvas.height + 2 * heightExt
         );
         this.context.restore();
     },
@@ -16526,6 +16607,16 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
         }
     },
 
+    /**
+     * Get the canvas size
+     * @param {Boolean} sketch If set to true return the size of the sketch canvas
+     * @returns {OpenSeadragon.Point} The size of the canvas
+     */
+    getCanvasSize: function(sketch) {
+        var canvas = this._getContext(sketch).canvas;
+        return new $.Point(canvas.width, canvas.height);
+    },
+
     // private
     _offsetForRotation: function(degrees, useSketch) {
         var cx = this.canvas.width / 2;
@@ -16552,6 +16643,23 @@ $.Drawer.prototype = /** @lends OpenSeadragon.Drawer.prototype */{
         return {
             x: viewportSize.x * pixelDensityRatio,
             y: viewportSize.y * pixelDensityRatio
+        };
+    },
+
+    // private
+    _calculateSketchCanvasSize: function() {
+        var canvasSize = this._calculateCanvasSize();
+        if (this.viewport.getRotation() === 0) {
+            return canvasSize;
+        }
+        // If the viewport is rotated, we need a larger sketch canvas in order
+        // to support edge smoothing.
+        var sketchCanvasSize = Math.ceil(Math.sqrt(
+            canvasSize.x * canvasSize.x +
+            canvasSize.y * canvasSize.y));
+        return {
+            x: sketchCanvasSize,
+            y: sketchCanvasSize
         };
     }
 };
@@ -16704,7 +16812,8 @@ $.Viewport = function( options ) {
     this.update();
 };
 
-$.Viewport.prototype = /** @lends OpenSeadragon.Viewport.prototype */{
+/** @lends OpenSeadragon.Viewport.prototype */
+$.Viewport.prototype = {
     /**
      * Updates the viewport's home bounds and constraints for the given content size.
      * @function
@@ -17636,15 +17745,15 @@ $.Viewport.prototype = /** @lends OpenSeadragon.Viewport.prototype */{
      * OpenSeadragon.Point
      * Note: not accurate with multi-image; use TiledImage.viewportToImageCoordinates instead.
      * @function
-     * @param {OpenSeadragon.Point} viewerX the point in viewport coordinate system.
-     * @param {Number} viewerX X coordinate in viewport coordinate system.
-     * @param {Number} viewerY Y coordinate in viewport coordinate system.
+     * @param {(OpenSeadragon.Point|Number)} viewerX either a point or the X
+     * coordinate in viewport coordinate system.
+     * @param {Number} [viewerY] Y coordinate in viewport coordinate system.
      * @return {OpenSeadragon.Point} a point representing the coordinates in the image.
      */
-    viewportToImageCoordinates: function( viewerX, viewerY ) {
-        if ( arguments.length == 1 ) {
+    viewportToImageCoordinates: function(viewerX, viewerY) {
+        if (viewerX instanceof $.Point) {
             //they passed a point instead of individual components
-            return this.viewportToImageCoordinates( viewerX.x, viewerX.y );
+            return this.viewportToImageCoordinates(viewerX.x, viewerX.y);
         }
 
         if (this.viewer && this.viewer.world.getItemCount() > 1) {
@@ -17667,15 +17776,15 @@ $.Viewport.prototype = /** @lends OpenSeadragon.Viewport.prototype */{
      * OpenSeadragon.Point
      * Note: not accurate with multi-image; use TiledImage.imageToViewportCoordinates instead.
      * @function
-     * @param {OpenSeadragon.Point} imageX the point in image coordinate system.
-     * @param {Number} imageX X coordinate in image coordinate system.
-     * @param {Number} imageY Y coordinate in image coordinate system.
+     * @param {(OpenSeadragon.Point | Number)} imageX the point or the
+     * X coordinate in image coordinate system.
+     * @param {Number} [imageY] Y coordinate in image coordinate system.
      * @return {OpenSeadragon.Point} a point representing the coordinates in the viewport.
      */
-    imageToViewportCoordinates: function( imageX, imageY ) {
-        if ( arguments.length == 1 ) {
+    imageToViewportCoordinates: function(imageX, imageY) {
+        if (imageX instanceof $.Point) {
             //they passed a point instead of individual components
-            return this.imageToViewportCoordinates( imageX.x, imageX.y );
+            return this.imageToViewportCoordinates(imageX.x, imageX.y);
         }
 
         if (this.viewer && this.viewer.world.getItemCount() > 1) {
@@ -17695,13 +17804,12 @@ $.Viewport.prototype = /** @lends OpenSeadragon.Viewport.prototype */{
      * OpenSeadragon.Rect
      * Note: not accurate with multi-image; use TiledImage.imageToViewportRectangle instead.
      * @function
-     * @param {OpenSeadragon.Rect} imageX the rectangle in image coordinate system.
-     * @param {Number} imageX the X coordinate of the top left corner of the rectangle
+     * @param {(OpenSeadragon.Rect | Number)} imageX the rectangle or the X
+     * coordinate of the top left corner of the rectangle in image coordinate system.
+     * @param {Number} [imageY] the Y coordinate of the top left corner of the rectangle
      * in image coordinate system.
-     * @param {Number} imageY the Y coordinate of the top left corner of the rectangle
-     * in image coordinate system.
-     * @param {Number} pixelWidth the width in pixel of the rectangle.
-     * @param {Number} pixelHeight the height in pixel of the rectangle.
+     * @param {Number} [pixelWidth] the width in pixel of the rectangle.
+     * @param {Number} [pixelHeight] the height in pixel of the rectangle.
      */
     imageToViewportRectangle: function(imageX, imageY, pixelWidth, pixelHeight) {
         var rect = imageX;
@@ -17728,13 +17836,13 @@ $.Viewport.prototype = /** @lends OpenSeadragon.Viewport.prototype */{
      * OpenSeadragon.Rect
      * Note: not accurate with multi-image; use TiledImage.viewportToImageRectangle instead.
      * @function
-     * @param {OpenSeadragon.Rect} viewerX the rectangle in viewport coordinate system.
-     * @param {Number} viewerX the X coordinate of the top left corner of the rectangle
+     * @param {(OpenSeadragon.Rect | Number)} viewerX either a rectangle or
+     * the X coordinate of the top left corner of the rectangle in viewport
+     * coordinate system.
+     * @param {Number} [viewerY] the Y coordinate of the top left corner of the rectangle
      * in viewport coordinate system.
-     * @param {Number} imageY the Y coordinate of the top left corner of the rectangle
-     * in viewport coordinate system.
-     * @param {Number} pointWidth the width of the rectangle in viewport coordinate system.
-     * @param {Number} pointHeight the height of the rectangle in viewport coordinate system.
+     * @param {Number} [pointWidth] the width of the rectangle in viewport coordinate system.
+     * @param {Number} [pointHeight] the height of the rectangle in viewport coordinate system.
      */
     viewportToImageRectangle: function(viewerX, viewerY, pointWidth, pointHeight) {
         var rect = viewerX;
@@ -17963,6 +18071,7 @@ $.Viewport.prototype = /** @lends OpenSeadragon.Viewport.prototype */{
  * @param {Number} [options.minPixelRatio] - See {@link OpenSeadragon.Options}.
  * @param {Number} [options.smoothTileEdgesMinZoom] - See {@link OpenSeadragon.Options}.
  * @param {Number} [options.opacity=1] - Opacity the tiled image should be drawn at.
+ * @param {String} [options.compositeOperation] - How the image is composited onto other images; see compositeOperation in {@link OpenSeadragon.Options} for possible values.
  * @param {Boolean} [options.debugMode] - See {@link OpenSeadragon.Options}.
  * @param {String|CanvasGradient|CanvasPattern|Function} [options.placeholderFillStyle] - See {@link OpenSeadragon.Options}.
  * @param {String|Boolean} [options.crossOriginPolicy] - See {@link OpenSeadragon.Options}.
@@ -18029,7 +18138,6 @@ $.TiledImage = function( options ) {
         _midDraw:       false, // Is the tiledImage currently updating the viewport?
         _needsDraw:     true,  // Does the tiledImage need to update the viewport again?
         _hasOpaqueTile: false,  // Do we have even one fully opaque tile?
-
         //configurable settings
         springStiffness:        $.DEFAULT_SETTINGS.springStiffness,
         animationTime:          $.DEFAULT_SETTINGS.animationTime,
@@ -18045,7 +18153,8 @@ $.TiledImage = function( options ) {
         requestHeaders:         $.DEFAULT_SETTINGS.headers,
         ajaxWithCredentials:    $.DEFAULT_SETTINGS.ajaxWithCredentials,
         placeholderFillStyle:   $.DEFAULT_SETTINGS.placeholderFillStyle,
-        opacity:                $.DEFAULT_SETTINGS.opacity
+        opacity:                $.DEFAULT_SETTINGS.opacity,
+        compositeOperation:     $.DEFAULT_SETTINGS.compositeOperation
 
     }, options );
 
@@ -18074,7 +18183,7 @@ $.TiledImage = function( options ) {
       /**
        * This event is fired just before the tile is drawn giving the application a chance to alter the image.
        *
-       * NOTE: This event is only fired when the drawer is using a <canvas>.
+       * NOTE: This event is only fired when the drawer is using a &lt;canvas&gt;.
        *
        * @event tile-drawing
        * @memberof OpenSeadragon.Viewer
@@ -18480,6 +18589,21 @@ $.extend($.TiledImage.prototype, $.EventSource.prototype, /** @lends OpenSeadrag
      */
     setOpacity: function(opacity) {
         this.opacity = opacity;
+        this._needsDraw = true;
+    },
+
+    /**
+     * @returns {String} The TiledImage's current compositeOperation.
+     */
+    getCompositeOperation: function() {
+        return this.compositeOperation;
+    },
+
+    /**
+     * @param {String} compositeOperation the tiled image should be drawn with this globalCompositeOperation.
+     */
+    setCompositeOperation: function(compositeOperation) {
+        this.compositeOperation = compositeOperation;
         this._needsDraw = true;
     },
 
@@ -19212,25 +19336,31 @@ function drawTiles( tiledImage, lastDrawn ) {
         drawDebugInfo( tiledImage, lastDrawn );
         return;
     }
-    var useSketch = tiledImage.opacity < 1;
+    var useSketch = tiledImage.opacity < 1 ||
+          (tiledImage.compositeOperation && tiledImage.compositeOperation !== 'source-over');
+
     var sketchScale;
     var sketchTranslate;
 
     var zoom = tiledImage.viewport.getZoom(true);
     var imageZoom = tiledImage.viewportToImageZoom(zoom);
-    if ( imageZoom > tiledImage.smoothTileEdgesMinZoom && tile) {
+    if (imageZoom > tiledImage.smoothTileEdgesMinZoom && tile) {
         // When zoomed in a lot (>100%) the tile edges are visible.
         // So we have to composite them at ~100% and scale them up together.
         useSketch = true;
         sketchScale = tile.getScaleForEdgeSmoothing();
-        sketchTranslate = tile.getTranslationForEdgeSmoothing(sketchScale);
+        sketchTranslate = tile.getTranslationForEdgeSmoothing(sketchScale,
+            tiledImage._drawer.getCanvasSize(false),
+            tiledImage._drawer.getCanvasSize(true));
     }
 
     if ( useSketch ) {
         tiledImage._drawer._clear( true );
     }
 
-    if (tiledImage.viewport.degrees !== 0) {
+    // When scaling, we must rotate only when blending the sketch canvas to avoid
+    // interpolation
+    if (tiledImage.viewport.degrees !== 0 && !sketchScale) {
         tiledImage._drawer._offsetForRotation(tiledImage.viewport.degrees, useSketch);
     }
 
@@ -19299,12 +19429,19 @@ function drawTiles( tiledImage, lastDrawn ) {
         tiledImage._drawer.restoreContext( useSketch );
     }
 
-    if (tiledImage.viewport.degrees !== 0) {
+    if (tiledImage.viewport.degrees !== 0 && !sketchScale) {
         tiledImage._drawer._restoreRotationChanges(useSketch);
     }
 
-    if ( useSketch ) {
-        tiledImage._drawer.blendSketch( tiledImage.opacity, sketchScale, sketchTranslate );
+    if (useSketch) {
+        var offsetForRotation = tiledImage.viewport.degrees !== 0 && sketchScale;
+        if (offsetForRotation) {
+            tiledImage._drawer._offsetForRotation(tiledImage.viewport.degrees, false);
+        }
+        tiledImage._drawer.blendSketch(tiledImage.opacity, sketchScale, sketchTranslate, tiledImage.compositeOperation);
+        if (offsetForRotation) {
+            tiledImage._drawer._restoreRotationChanges(false);
+        }
     }
     drawDebugInfo( tiledImage, lastDrawn );
 }
@@ -19448,7 +19585,8 @@ $.TileCache = function( options ) {
     this._imagesLoadedCount = 0;
 };
 
-$.TileCache.prototype = /** @lends OpenSeadragon.TileCache.prototype */{
+/** @lends OpenSeadragon.TileCache.prototype */
+$.TileCache.prototype = {
     /**
      * @returns {Number} The total number of tiles that have been loaded by
      * this TileCache.
