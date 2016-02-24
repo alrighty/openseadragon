@@ -1,6 +1,6 @@
 //! openseadragon 2.1.0
-//! Built on 2016-02-19
-//! Git commit: v2.1.0-137-4fb7bcc-dirty
+//! Built on 2016-02-24
+//! Git commit: v2.1.0-139-e2332d6-dirty
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -8130,7 +8130,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     alwaysBlend: _this.alwaysBlend,
                     minPixelRatio: _this.minPixelRatio,
                     smoothTileEdgesMinZoom: _this.smoothTileEdgesMinZoom,
-                    requestHeaders: _this.requestHeaders,
+                    requestHeaders: _this.viewer.requestHeaders,
                     ajaxWithCredentials: _this.ajaxWithCredentials,
                     debugMode: _this.debugMode
                 });
