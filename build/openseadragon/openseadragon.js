@@ -1,6 +1,6 @@
 //! openseadragon 2.1.0
 //! Built on 2016-02-24
-//! Git commit: v2.1.0-139-e2332d6-dirty
+//! Git commit: v2.1.0-140-978dade-dirty
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -7190,7 +7190,9 @@ $.Viewer = function( options ) {
             prefixUrl:         this.prefixUrl,
             viewer:            this,
             navigatorRotate:   this.navigatorRotate,
-            crossOriginPolicy: this.crossOriginPolicy
+            crossOriginPolicy: this.crossOriginPolicy,
+            requestHeaders:    this.requestHeaders,
+            ajaxWithCredentials: this.ajaxWithCredentials
         });
     }
 
@@ -8130,7 +8132,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     alwaysBlend: _this.alwaysBlend,
                     minPixelRatio: _this.minPixelRatio,
                     smoothTileEdgesMinZoom: _this.smoothTileEdgesMinZoom,
-                    requestHeaders: _this.viewer.requestHeaders,
+                    requestHeaders: _this.requestHeaders,
                     ajaxWithCredentials: _this.ajaxWithCredentials,
                     debugMode: _this.debugMode
                 });

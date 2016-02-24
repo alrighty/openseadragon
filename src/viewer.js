@@ -413,7 +413,9 @@ $.Viewer = function( options ) {
             prefixUrl:         this.prefixUrl,
             viewer:            this,
             navigatorRotate:   this.navigatorRotate,
-            crossOriginPolicy: this.crossOriginPolicy
+            crossOriginPolicy: this.crossOriginPolicy,
+            requestHeaders:    this.requestHeaders,
+            ajaxWithCredentials: this.ajaxWithCredentials
         });
     }
 
@@ -1353,7 +1355,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     alwaysBlend: _this.alwaysBlend,
                     minPixelRatio: _this.minPixelRatio,
                     smoothTileEdgesMinZoom: _this.smoothTileEdgesMinZoom,
-                    requestHeaders: _this.viewer.requestHeaders,
+                    requestHeaders: _this.requestHeaders,
                     ajaxWithCredentials: _this.ajaxWithCredentials,
                     debugMode: _this.debugMode
                 });
