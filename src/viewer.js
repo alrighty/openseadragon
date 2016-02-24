@@ -1353,7 +1353,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     alwaysBlend: _this.alwaysBlend,
                     minPixelRatio: _this.minPixelRatio,
                     smoothTileEdgesMinZoom: _this.smoothTileEdgesMinZoom,
-                    requestHeaders: _this.requestHeaders,
+                    requestHeaders: _this.viewer.requestHeaders,
                     ajaxWithCredentials: _this.ajaxWithCredentials,
                     debugMode: _this.debugMode
                 });
