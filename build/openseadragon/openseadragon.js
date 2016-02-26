@@ -1,6 +1,6 @@
 //! openseadragon 2.1.0
-//! Built on 2016-02-24
-//! Git commit: v2.1.0-140-978dade-dirty
+//! Built on 2016-02-26
+//! Git commit: v2.1.0-164-b44d684-dirty
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -8725,6 +8725,27 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
         return this;
     },
 
+     /**
+     * Finds an overlay identified by the reference element or element id
+     * and returns it as an object, return null if not found.
+     * @method
+     * @param {Element|String} element - A reference to the element or an
+     *      element id which represents the overlay content.
+     * @return {OpenSeadragon.Overlay} the matching overlay or null if none found.
+     */
+    getOverlayById: function( element ) {
+        var i;
+
+        element = $.getElement( element );
+        i = getOverlayIndex( this.currentOverlays, element );
+
+        if (i>=0) {
+            return this.currentOverlays[i];
+        } else {
+            return null;
+        }
+    },
+
     /**
      * Updates the sequence buttons.
      * @function OpenSeadragon.Viewer.prototype._updateSequenceButtons
@@ -9631,7 +9652,10 @@ function onCanvasScroll( event ) {
         }
     }
     else {
-        return false;   // We are swallowing this event
+        gestureSettings = this.gestureSettingsByDeviceType( event.pointerType );
+        if (gestureSettings && gestureSettings.scrollToZoom) {
+            return false;   // We are swallowing this event
+        }
     }
 }
 
@@ -15573,6 +15597,11 @@ $.Tile.prototype = {
         return this.level + "/" + this.x + "_" + this.y;
     },
 
+    // private
+    _hasTransparencyChannel: function() {
+        return this.context2D || this.url.match('.png');
+    },
+
     /**
      * Renders the tile in an html container.
      * @function
@@ -15660,27 +15689,6 @@ $.Tile.prototype = {
 
         context.globalAlpha = this.opacity;
 
-        //if we are supposed to be rendering fully opaque rectangle,
-        //ie its done fading or fading is turned off, and if we are drawing
-        //an image with an alpha channel, then the only way
-        //to avoid seeing the tile underneath is to clear the rectangle
-        if (context.globalAlpha === 1 &&
-                (this.context2D || this.url.match('.png'))) {
-            //clearing only the inside of the rectangle occupied
-            //by the png prevents edge flikering
-            context.clearRect(
-                position.x + 1,
-                position.y + 1,
-                size.x - 2,
-                size.y - 2
-            );
-
-        }
-
-        // This gives the application a chance to make image manipulation
-        // changes as we are rendering the image
-        drawingHandler({context: context, tile: this, rendered: rendered});
-
         if (typeof scale === 'number' && scale !== 1) {
             // draw tile at a different scale
             position = position.times(scale);
@@ -15691,6 +15699,25 @@ $.Tile.prototype = {
             // shift tile position slightly
             position = position.plus(translate);
         }
+
+        //if we are supposed to be rendering fully opaque rectangle,
+        //ie its done fading or fading is turned off, and if we are drawing
+        //an image with an alpha channel, then the only way
+        //to avoid seeing the tile underneath is to clear the rectangle
+        if (context.globalAlpha === 1 && this._hasTransparencyChannel()) {
+            //clearing only the inside of the rectangle occupied
+            //by the png prevents edge flikering
+            context.clearRect(
+                position.x + 1,
+                position.y + 1,
+                size.x - 2,
+                size.y - 2
+            );
+        }
+
+        // This gives the application a chance to make image manipulation
+        // changes as we are rendering the image
+        drawingHandler({context: context, tile: this, rendered: rendered});
 
         context.drawImage(
             rendered.canvas,
@@ -16083,8 +16110,15 @@ $.Tile.prototype = {
             this.placement  = location instanceof $.Point ?
                 placement :
                 $.OverlayPlacement.TOP_LEFT;
-        }
+        },
 
+        /**
+         * @function
+         * @returns {OpenSeadragon.Rect} overlay bounds
+         */
+        getBounds: function() {
+            return this.bounds.clone();
+        }
     };
 
 }( OpenSeadragon ));
@@ -18257,9 +18291,11 @@ $.extend($.TiledImage.prototype, $.EventSource.prototype, /** @lends OpenSeadrag
      * Draws the TiledImage to its Drawer.
      */
     draw: function() {
-        this._midDraw = true;
-        updateViewport( this );
-        this._midDraw = false;
+        if (this.opacity !== 0) {
+            this._midDraw = true;
+            updateViewport(this);
+            this._midDraw = false;
+        }
     },
 
     /**
@@ -18665,6 +18701,11 @@ $.extend($.TiledImage.prototype, $.EventSource.prototype, /** @lends OpenSeadrag
          * @property {?Object} userData - Arbitrary subscriber-defined object.
          */
         this.raiseEvent('bounds-change');
+    },
+
+    // private
+    _isBottomItem: function() {
+        return this.viewer.world.getItemAt(0) === this;
     }
 });
 
@@ -19340,22 +19381,22 @@ function compareTiles( previousBest, tile ) {
 }
 
 function drawTiles( tiledImage, lastDrawn ) {
-    var i,
-        tile = lastDrawn[0];
-
-    if ( tiledImage.opacity <= 0 ) {
-        drawDebugInfo( tiledImage, lastDrawn );
+    if (lastDrawn.length === 0) {
         return;
     }
+    var tile = lastDrawn[0];
+
     var useSketch = tiledImage.opacity < 1 ||
-          (tiledImage.compositeOperation && tiledImage.compositeOperation !== 'source-over');
+        (tiledImage.compositeOperation &&
+            tiledImage.compositeOperation !== 'source-over') ||
+        (!tiledImage._isBottomItem() && tile._hasTransparencyChannel());
 
     var sketchScale;
     var sketchTranslate;
 
     var zoom = tiledImage.viewport.getZoom(true);
     var imageZoom = tiledImage.viewportToImageZoom(zoom);
-    if (imageZoom > tiledImage.smoothTileEdgesMinZoom && tile) {
+    if (imageZoom > tiledImage.smoothTileEdgesMinZoom) {
         // When zoomed in a lot (>100%) the tile edges are visible.
         // So we have to composite them at ~100% and scale them up together.
         useSketch = true;
@@ -19412,7 +19453,7 @@ function drawTiles( tiledImage, lastDrawn ) {
         tiledImage._drawer.drawRectangle(placeholderRect, fillStyle, useSketch);
     }
 
-    for ( i = lastDrawn.length - 1; i >= 0; i-- ) {
+    for (var i = lastDrawn.length - 1; i >= 0; i--) {
         tile = lastDrawn[ i ];
         tiledImage._drawer.drawTile( tile, tiledImage._drawingHandler, useSketch, sketchScale, sketchTranslate );
         tile.beingDrawn = true;
