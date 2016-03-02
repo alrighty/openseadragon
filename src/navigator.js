@@ -338,6 +338,8 @@ $.extend( $.Navigator.prototype, $.EventSource.prototype, $.Viewer.prototype, /*
                 myItem._originalForNavigator = original;
                 _this._matchBounds(myItem, original, true);
 
+                options.success(event);
+
                 original.addHandler('bounds-change', function() {
                     _this._matchBounds(myItem, original);
                 });
