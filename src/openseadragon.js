@@ -986,6 +986,7 @@ if (typeof define === 'function' && define.amd) {
             tileSources:            null,
             tileHost:               null,
             initialPage:            0,
+            requestHeaders:         null,
             crossOriginPolicy:      false,
             ajaxWithCredentials:    false,
 
@@ -2006,13 +2007,18 @@ if (typeof define === 'function' && define.amd) {
          * @throws {Error}
          */
         makeAjaxRequest: function( url, onSuccess, onError ) {
-            var withCredentials;
+            var withCredentials,
+                responseType,
+                headers,
+                i;
 
             // Note that our preferred API is that you pass in a single object; the named
             // arguments are for legacy support.
             if( $.isPlainObject( url ) ){
                 onSuccess = url.success;
                 onError = url.error;
+                responseType = url.responseType;
+                headers = url.headers;
                 withCredentials = url.withCredentials;
                 url = url.url;
             }
@@ -2046,13 +2052,20 @@ if (typeof define === 'function' && define.amd) {
                 }
             };
 
+            if (responseType) {
+                request.responseType = responseType;
+            }
+
             if (withCredentials) {
                 request.withCredentials = true;
             }
 
             try {
-                request.open( "GET", url, true );
-                request.send( null );
+                request.open("GET", url, true);
+                for (i in headers) {
+                    request.setRequestHeader(i, headers[ i ]);
+                }
+                request.send(null);
             } catch (e) {
                 var msg = e.message;
 

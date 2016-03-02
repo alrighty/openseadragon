@@ -57,10 +57,6 @@ ImageJob.prototype = {
 
         this.image = new Image();
 
-        if ( this.crossOriginPolicy !== false ) {
-            this.image.crossOrigin = this.crossOriginPolicy;
-        }
-
         this.image.onload = function(){
             _this.finish( true );
         };
@@ -74,7 +70,24 @@ ImageJob.prototype = {
             _this.finish( false );
         }, this.timeout);
 
-        this.image.src = this.src;
+        $.makeAjaxRequest({
+            url: this.src,
+            headers: this.requestHeaders,
+            responseType: "arraybuffer",
+            withCredentials: this.ajaxWithCredentials,
+            success: function(xhr) {
+                // Obtain a blob: URL for the image data.
+                var arrayBufferView = new Uint8Array(xhr.response);
+                var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
+                var urlCreator = window.URL || window.webkitURL;
+                var imageUrl = urlCreator.createObjectURL(blob);
+                _this.image.src = imageUrl;
+            },
+            error: function(xhr, exc) {
+                _this.errorMsg = "Error loading image at " + _this.url;
+                _this.finish(false);
+            }
+        });
     },
 
     finish: function( successful ) {
@@ -126,7 +139,8 @@ $.ImageLoader.prototype = /** @lends OpenSeadragon.ImageLoader.prototype */{
             },
             jobOptions = {
                 src: options.src,
-                crossOriginPolicy: options.crossOriginPolicy,
+                requestHeaders: options.requestHeaders,
+                ajaxWithCredentials: options.ajaxWithCredentials,
                 callback: complete,
                 abort: options.abort
             },

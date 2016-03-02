@@ -1346,7 +1346,8 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                     blendTime: _this.blendTime,
                     alwaysBlend: _this.alwaysBlend,
                     minPixelRatio: _this.minPixelRatio,
-                    crossOriginPolicy: _this.crossOriginPolicy,
+                    requestHeaders: _this.requestHeaders,
+                    ajaxWithCredentials: _this.ajaxWithCredentials,
                     debugMode: _this.debugMode
                 });
 
@@ -2065,6 +2066,7 @@ function getTileSourceImplementation( viewer, tileSource, successCallback,
             //If its still a string it means it must be a url at this point
             tileSource = new $.TileSource({
                 url: tileSource,
+                requestHeaders: viewer.requestHeaders,
                 crossOriginPolicy: viewer.crossOriginPolicy,
                 ajaxWithCredentials: viewer.ajaxWithCredentials,
                 useCanvas: viewer.useCanvas,
@@ -2077,6 +2079,9 @@ function getTileSourceImplementation( viewer, tileSource, successCallback,
             } );
 
         } else if ($.isPlainObject(tileSource) || tileSource.nodeType) {
+            if (!tileSource.requestHeaders && viewer.requestHeaders) {
+                tileSource.requestHeaders = viewer.requestHeaders;
+            }
             if (!tileSource.crossOriginPolicy && viewer.crossOriginPolicy) {
                 tileSource.crossOriginPolicy = viewer.crossOriginPolicy;
             }
