@@ -178,19 +178,17 @@ $.Navigator = function( options ){
     this._resizeWithViewer = options.controlOptions.anchor != $.ControlAnchor.ABSOLUTE &&
         options.controlOptions.anchor != $.ControlAnchor.NONE;
 
-    if ( this._resizeWithViewer ) {
-        if ( options.width && options.height ) {
-            this.element.style.height = typeof ( options.height )  == "number" ? ( options.height + 'px' ) : options.height;
-            this.element.style.width  = typeof ( options.width )  == "number" ? ( options.width + 'px' ) : options.width;
-        } else {
-            viewerSize = $.getElementSize( viewer.element );
-            this.element.style.height = Math.round( viewerSize.y * options.sizeRatio ) + 'px';
-            this.element.style.width  = Math.round( viewerSize.x * options.sizeRatio ) + 'px';
-            this.oldViewerSize = viewerSize;
-        }
-        navigatorSize = $.getElementSize( this.element );
-        this.elementArea = navigatorSize.x * navigatorSize.y;
+    if ( options.width && options.height ) {
+        this.element.style.height = typeof ( options.height )  == "number" ? ( options.height + 'px' ) : options.height;
+        this.element.style.width  = typeof ( options.width )  == "number" ? ( options.width + 'px' ) : options.width;
+    } else {
+        viewerSize = $.getElementSize( viewer.element );
+        this.element.style.height = Math.round( viewerSize.y * options.sizeRatio ) + 'px';
+        this.element.style.width  = Math.round( viewerSize.x * options.sizeRatio ) + 'px';
+        this.oldViewerSize = viewerSize;
     }
+    navigatorSize = $.getElementSize( this.element );
+    this.elementArea = navigatorSize.x * navigatorSize.y;
 
     this.oldContainerSize = new $.Point( 0, 0 );
 
