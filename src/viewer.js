@@ -401,19 +401,21 @@ $.Viewer = function( options ) {
     //Instantiate a navigator if configured
     if ( this.showNavigator){
         this.navigator = new $.Navigator({
-            id:                this.navigatorId,
-            position:          this.navigatorPosition,
-            sizeRatio:         this.navigatorSizeRatio,
-            maintainSizeRatio: this.navigatorMaintainSizeRatio,
-            top:               this.navigatorTop,
-            left:              this.navigatorLeft,
-            width:             this.navigatorWidth,
-            height:            this.navigatorHeight,
-            autoResize:        this.navigatorAutoResize,
-            prefixUrl:         this.prefixUrl,
-            viewer:            this,
-            navigatorRotate:   this.navigatorRotate,
-            crossOriginPolicy: this.crossOriginPolicy
+            id:                  this.navigatorId,
+            position:            this.navigatorPosition,
+            sizeRatio:           this.navigatorSizeRatio,
+            maintainSizeRatio:   this.navigatorMaintainSizeRatio,
+            top:                 this.navigatorTop,
+            left:                this.navigatorLeft,
+            width:               this.navigatorWidth,
+            height:              this.navigatorHeight,
+            autoResize:          this.navigatorAutoResize,
+            prefixUrl:           this.prefixUrl,
+            viewer:              this,
+            navigatorRotate:     this.navigatorRotate,
+            crossOriginPolicy:   this.crossOriginPolicy,
+            requestHeaders:      this.requestHeaders,
+            ajaxWithCredentials: this.ajaxWithCredentials
         });
     }
 
