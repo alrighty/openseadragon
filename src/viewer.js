@@ -234,7 +234,9 @@ $.Viewer = function( options ) {
         style.left     = "0px";
     }(this.canvas.style));
     $.setElementTouchActionNone( this.canvas );
-    this.canvas.tabIndex = (options.tabIndex === undefined ? 0 : options.tabIndex);
+    if (options.tabIndex !== "") {
+        this.canvas.tabIndex = (options.tabIndex === undefined ? 0 : options.tabIndex);
+    }
 
     //the container is created through applying the ControlDock constructor above
     this.container.className = "openseadragon-container";
@@ -1785,7 +1787,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * @param {Element|String|Object} element - A reference to an element or an id for
      *      the element which will be overlayed. Or an Object specifying the configuration for the overlay
      * @param {OpenSeadragon.Point|OpenSeadragon.Rect} location - The point or
-     *      rectangle which will be overlayed.
+     *      rectangle which will be overlayed. This is a viewport relative location.
      * @param {OpenSeadragon.OverlayPlacement} placement - The position of the
      *      viewport which the location coordinates will be treated as relative
      *      to.
@@ -1846,7 +1848,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * @param {Element|String} element - A reference to an element or an id for
      *      the element which is overlayed.
      * @param {OpenSeadragon.Point|OpenSeadragon.Rect} location - The point or
-     *      rectangle which will be overlayed.
+     *      rectangle which will be overlayed. This is a viewport relative location.
      * @param {OpenSeadragon.OverlayPlacement} placement - The position of the
      *      viewport which the location coordinates will be treated as relative
      *      to.
