@@ -1,6 +1,6 @@
 //! openseadragon 2.1.0
-//! Built on 2016-02-26
-//! Git commit: v2.1.0-164-b44d684-dirty
+//! Built on 2016-03-21
+//! Git commit: v2.1.0-177-6bc7977-dirty
 //! http://openseadragon.github.io
 //! License: http://openseadragon.github.io/license/
 
@@ -7011,7 +7011,9 @@ $.Viewer = function( options ) {
         style.left     = "0px";
     }(this.canvas.style));
     $.setElementTouchActionNone( this.canvas );
-    this.canvas.tabIndex = (options.tabIndex === undefined ? 0 : options.tabIndex);
+    if (options.tabIndex !== "") {
+        this.canvas.tabIndex = (options.tabIndex === undefined ? 0 : options.tabIndex);
+    }
 
     //the container is created through applying the ControlDock constructor above
     this.container.className = "openseadragon-container";
@@ -8562,7 +8564,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * @param {Element|String|Object} element - A reference to an element or an id for
      *      the element which will be overlayed. Or an Object specifying the configuration for the overlay
      * @param {OpenSeadragon.Point|OpenSeadragon.Rect} location - The point or
-     *      rectangle which will be overlayed.
+     *      rectangle which will be overlayed. This is a viewport relative location.
      * @param {OpenSeadragon.OverlayPlacement} placement - The position of the
      *      viewport which the location coordinates will be treated as relative
      *      to.
@@ -8623,7 +8625,7 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
      * @param {Element|String} element - A reference to an element or an id for
      *      the element which is overlayed.
      * @param {OpenSeadragon.Point|OpenSeadragon.Rect} location - The point or
-     *      rectangle which will be overlayed.
+     *      rectangle which will be overlayed. This is a viewport relative location.
      * @param {OpenSeadragon.OverlayPlacement} placement - The position of the
      *      viewport which the location coordinates will be treated as relative
      *      to.
@@ -9326,22 +9328,25 @@ function onCanvasDrag( event ) {
 }
 
 function onCanvasDragEnd( event ) {
-    var gestureSettings;
-
-    if ( !event.preventDefaultAction && this.viewport ) {
-        gestureSettings = this.gestureSettingsByDeviceType( event.pointerType );
-        if ( gestureSettings.flickEnabled && event.speed >= gestureSettings.flickMinSpeed ) {
-            var amplitudeX = gestureSettings.flickMomentum * ( event.speed * Math.cos( event.direction - (Math.PI / 180 * this.viewport.degrees) ) ),
-                amplitudeY = gestureSettings.flickMomentum * ( event.speed * Math.sin( event.direction - (Math.PI / 180 * this.viewport.degrees) ) ),
-                center = this.viewport.pixelFromPoint( this.viewport.getCenter( true ) ),
-                target = this.viewport.pointFromPixel( new $.Point( center.x - amplitudeX, center.y - amplitudeY ) );
-            if( !this.panHorizontal ) {
-                target.x = center.x;
+    if (!event.preventDefaultAction && this.viewport) {
+        var gestureSettings = this.gestureSettingsByDeviceType(event.pointerType);
+        if (gestureSettings.flickEnabled &&
+            event.speed >= gestureSettings.flickMinSpeed) {
+            var amplitudeX = 0;
+            if (this.panHorizontal) {
+                amplitudeX = gestureSettings.flickMomentum * event.speed *
+                    Math.cos(event.direction);
             }
-            if( !this.panVertical ) {
-                target.y = center.y;
+            var amplitudeY = 0;
+            if (this.panVertical) {
+                amplitudeY = gestureSettings.flickMomentum * event.speed *
+                    Math.sin(event.direction);
             }
-            this.viewport.panTo( target, false );
+            var center = this.viewport.pixelFromPoint(
+                this.viewport.getCenter(true));
+            var target = this.viewport.pointFromPixel(
+                new $.Point(center.x - amplitudeX, center.y - amplitudeY));
+            this.viewport.panTo(target, false);
         }
         this.viewport.applyConstraints();
     }
@@ -9360,7 +9365,7 @@ function onCanvasDragEnd( event ) {
      * @property {Object} originalEvent - The original DOM event.
      * @property {?Object} userData - Arbitrary subscriber-defined object.
      */
-    this.raiseEvent( 'canvas-drag-end', {
+    this.raiseEvent('canvas-drag-end', {
         tracker: event.eventSource,
         position: event.position,
         speed: event.speed,
@@ -14562,7 +14567,6 @@ $.extend( $.ReferenceStrip.prototype, $.EventSource.prototype, $.Viewer.prototyp
             }
 
             this.currentPage = page;
-            $.getElement( element.id + '-displayregion' ).focus();
             onStripEnter.call( this, { eventSource: this.innerTracker } );
         }
     },
